@@ -24,7 +24,6 @@ const getUser = async (id, role) => {
   return user;
 };
 
-
 exports.protect = catchAsync(async (req, res, next) => {
   let token;
   if (
@@ -66,7 +65,7 @@ exports.protect = catchAsync(async (req, res, next) => {
     return next(
       new appError(
         401,
-        'Admin has recently changed his password .. pls login again'
+        'user has recently changed his password .. pls login again'
       )
     );
   }

@@ -132,13 +132,16 @@ exports.takeAttendance = catchAsync(async (req, res, next) => {
     currentLecture.attendanceRecorded = true;
     await currentLecture.save({ validateBeforeSave: false });
 
-    const students = await Student.find({ courses: courseId }).select('_id');
+    const students = await Student.find({ courses: courseId }).select(
+      '_id name'
+    );
     // create attendance records
     await Promise.all(
       students.map(async student => {
         // Create attendance record
         const attendance = new Attendance({
           studentId: student._id,
+          studentName: student.name,
           lecture: lectureId,
           courseId: courseId,
           token: `${courseId}${lectureId}${student._id}`,
