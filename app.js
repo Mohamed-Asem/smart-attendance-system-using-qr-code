@@ -7,7 +7,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const doctorRoutes = require('./routes/doctorRoutes');
 const courseRoutes = require('./routes/courseRoutes');
 const lectureRoutes = require('./routes/lectureRoutes');
-// our app
+// starting express app
 const app = express();
 
 // middlewares :
