@@ -8,15 +8,13 @@ const sendEmail = async ({ html, subject, to }) => {
     port: 465,
     secure: true,
     auth: {
-      user: 'asemm9930@gmail.com',
-      pass: 'dvtz ycgy noem wzyw',
+      user: process.env.EMAIL,
+      pass: process.env.EMAIL_PASSWORD,
     },
   });
 
   const mailOptions = {
-    from: 'mohamed asem <asemm9930@gmail.com>',
-    // to: 'asem47261@gmail.com',
-    // to: 'hebawaheed169@gmail.com',
+    from: `Qr App <process.env.EMAIL>`,
     to, // we will get email address from the user
     subject,
     html,

@@ -13,7 +13,7 @@ dotenv.config({ path: './config.env' });
 const app = require('./app');
 
 mongoose
-  .connect('mongodb://127.0.0.1:27017/qrAttendence')
+  .connect(process.env.DATABASE_URL)
   .then(() => console.log('DB connected successfully'));
 
 const server = app.listen(process.env.PORT, () => {
