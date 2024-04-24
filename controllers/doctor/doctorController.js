@@ -50,7 +50,10 @@ exports.getAllDoctors = catchAsync(async (req, res, next) => {
 exports.getDoctorById = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
-  const doctor = await Doctor.findById(id);
+  const doctor = await Doctor.findById(id).populate({
+    path: 'courses',
+    select: 'courseName',
+  });
   if (!doctor) {
     return next(new appError(404, 'This doctor does not exist'));
   }
@@ -67,7 +70,11 @@ exports.getDoctorByEmail = catchAsync(async (req, res, next) => {
   const { email } = req.body;
   if (!email)
     return next(new appError(400, "Enter doctor's email to get his data"));
-  const doctor = await Doctor.findOne({ email }).select('-passwordChangedAt');
+  const doctor = await Doctor.findOne({ email }).populate({
+    path: 'courses',
+    select: 'courseName',
+  });
+
   if (!doctor) return next(new appError(404, 'this doctor does not exist'));
 
   res.status(200).json({
@@ -252,7 +259,7 @@ exports.changeStudentAttendanceStatus = catchAsync(async (req, res, next) => {
     record.status = 'absent';
     await record.save();
   }
-  res.status(201).json({
+  res.status(200).json({
     status: 'success',
     message: `student marked as ${record.status} successfully`,
     data: {
@@ -264,6 +271,11 @@ exports.changeStudentAttendanceStatus = catchAsync(async (req, res, next) => {
 exports.uploadProfilePicture = catchAsync(async (req, res, next) => {
   const doctorId = req.user.id;
 
+  if (!req.file.path) {
+    return next(
+      new appError(400, 'file did not uploaded! .. please try again')
+    );
+  }
   // 1) upload image to cloudinary
   const { secure_url, public_id } = await cloudinary.uploader.upload(
     req.file.path
@@ -284,6 +296,12 @@ exports.uploadProfilePicture = catchAsync(async (req, res, next) => {
 
 exports.updateProfilePicture = catchAsync(async (req, res, next) => {
   const doctorId = req.user.id;
+
+  if (!req.file.path) {
+    return next(
+      new appError(400, 'file did not uploaded! .. please try again')
+    );
+  }
 
   const doctor = await Doctor.findById(doctorId);
   if (!doctor.profilePicture.public_id) {

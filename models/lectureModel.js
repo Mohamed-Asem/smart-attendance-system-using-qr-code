@@ -13,6 +13,8 @@ const lectureSchema = new mongoose.Schema(
     lectureNumber: {
       type: Number,
       required: [true, 'Lecture must have a number'],
+      min: [1, 'lecture number must be between 1 and 12'],
+      max: [12, 'lecture number must be between 1 and 12'],
     },
     uniqueLecture: {
       type: String,

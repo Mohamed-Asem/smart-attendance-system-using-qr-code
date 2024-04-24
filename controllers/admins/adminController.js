@@ -180,7 +180,6 @@ exports.uploadDoctorsData = catchAsync(async (req, res, next) => {
 
   const storedDoctor = await Doctor.insertMany(completeDoctors);
 
-  console.log(storedDoctor);
   // remove file from file system
   await fs.unlink(req.file.path);
   // handle message

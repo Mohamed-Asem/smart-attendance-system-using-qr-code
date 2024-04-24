@@ -89,6 +89,14 @@ exports.getStudentByEmail = catchAsync(async (req, res, next) => {
 exports.updateStudent = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const { name, email, level, passedCourses } = req.body;
+  if (!name || !email || !level || !passedCourses) {
+    return next(
+      new appError(
+        400,
+        'please enter name, email, level, and passedCourses of student to be updated '
+      )
+    );
+  }
   const student = await Student.findByIdAndUpdate(
     id,
     { name, email, level, passedCourses },

@@ -44,6 +44,7 @@ exports.getCourseById = catchAsync(async (req, res, next) => {
   const course = await Course.findById(id)
     .populate({ path: 'lectures' })
     .populate({ path: 'doctorId', select: 'name email' });
+
   if (!course) return next(new appError(400, 'this course does not exist'));
   res.status(200).json({
     status: 'success',
