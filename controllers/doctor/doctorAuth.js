@@ -62,66 +62,6 @@ exports.doctorLogin = catchAsync(async (req, res, next) => {
   });
 });
 
-// protect route check if the doctor is logged in
-
-// exports.protect = catchAsync(async (req, res, next) => {
-//   let token;
-//   if (
-//     req.headers.authorization &&
-//     req.headers.authorization.startsWith('Bearer')
-//   ) {
-//     token = req.headers.authorization.split(' ').at(1);
-//   }
-
-//   if (!token) {
-//     return next(
-//       new appError(
-//         401,
-//         'token missed, Please login to get access to this resource'
-//       )
-//     );
-//   }
-
-//   // check if the user logged out
-//   const blackListToken = await BlackListToken.findOne({ token });
-//   if (blackListToken)
-//     return next(
-//       new appError(401, 'You logged out .. please login again to get access')
-//     );
-//   // token verification
-//   const payload = await promisify(jwt.verify)(token, process.env.JWT_SECRETKEY);
-//   const doctor = await Doctor.findById(payload.id);
-//   if (!doctor) return next(new appError(401, 'this doctor is no longer exist'));
-//   //check if the doctor has changed his password after token has issued
-//   if (doctor.checkIfDoctorChangedPasswordAfterTokenIssued(payload.iat)) {
-//     return next(
-//       new appError(
-//         401,
-//         'doctor has recently changed his password. Please login again'
-//       )
-//     );
-//   }
-//   req.user = doctor;
-//   req.token = token;
-//   next();
-// });
-
-// // authorization :
-
-// exports.restrictTo = (...roles) => {
-//   return (req, res, next) => {
-//     if (!roles.includes(req.user.role)) {
-//       return next(
-//         new appError(403, 'you are not allowed to perform this action')
-//       );
-//     }
-
-//     next();
-//   };
-// };
-
-// 4 functions related to forget password functionalities
-
 // 1) forget password
 
 exports.forgetPassword = catchAsync(async (req, res, next) => {
@@ -259,13 +199,10 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   doctor.passwordChangedAt = Date.now();
   await doctor.save();
 
-  // log in the user
-  const token = createJWT(doctor._id, doctor.role);
-
   res.status(200).json({
     status: 'success',
-    message: 'Your password successfully updated',
-    token,
+    message:
+      'Your password successfully updated .. please login again with your new password',
   });
 });
 
@@ -369,12 +306,10 @@ exports.changePassword = catchAsync(async (req, res, next) => {
   doctor.passwordChangedAt = Date.now();
   await doctor.save();
 
-  const token = createJWT(doctor._id, doctor.role);
-
   res.status(200).json({
     status: 'success',
-    message: 'Your password successfully updated',
-    token,
+    message:
+      'Your password successfully updated .. please login with your new password',
   });
 });
 

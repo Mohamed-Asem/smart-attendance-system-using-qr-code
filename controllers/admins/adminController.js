@@ -1,5 +1,5 @@
-const bcrypt = require('bcryptjs');
 const fs = require('fs').promises;
+const { promisify } = require('util');
 const randomPassword = require('random-password');
 const Admin = require('./../../models/adminModel');
 const Doctor = require('./../../models/doctorModel');
@@ -8,17 +8,14 @@ const Course = require('./../../models/courseModel');
 const catchAsync = require('../../utils/catchAsync');
 const appError = require('../../utils/appError');
 const generateId = require('./../../utils/generateUniqueId');
-
-// function generateUniqueId(length) {
-//   let id = '';
-//   for (let i = 0; i < length; i++) {
-//     id += Math.floor(math.random() * 10);
-//   }
-//   return id;
-// }
+const cloudinary = require('./../../utils/cloud');
 
 exports.addNewAdmin = catchAsync(async (req, res, next) => {
-  const admin = await Admin.create(req.body);
+  const { name, email, password } = req.body;
+  if (!name || !email || !password) {
+    return next(new appError(400, 'please enter name, email, and password'));
+  }
+  const admin = await Admin.create({ name, email, password });
   res.status(201).json({
     status: 'success',
     data: {
@@ -109,6 +106,55 @@ exports.uploadStudentData = catchAsync(async (req, res, next) => {
 
 // upload doctors data :
 
+// exports.uploadDoctorsData = catchAsync(async (req, res, next) => {
+//   if (!req.file) return next(new appError(400, 'file must be uploaded'));
+
+//   const fileContent = await fs.readFile(req.file.path, 'utf-8');
+//   const doctors = JSON.parse(fileContent);
+
+//   // check if all required fields provided for all doctors
+//   const completeDoctors = [];
+//   const incompleteDoctors = [];
+
+//   doctors.forEach((doctor, index) => {
+//     if (doctor.name && doctor.email) {
+//       completeDoctors.push(doctor);
+//     } else {
+//       doctor.doctorIndex = index + 1;
+//       incompleteDoctors.push(doctor);
+//     }
+//   });
+
+//   completeDoctors.forEach(doctor => {
+//     doctor.password = randomPassword(8, '1234567890');
+//     doctor.doctorId = generateId(5);
+//     doctor.notActivated = true;
+//   });
+
+//   const storedDoctors = await Doctor.insertMany(completeDoctors);
+
+//   console.log(storedDoctors);
+//   // remove file from file system
+//   await fs.unlink(req.file.path);
+//   // handle message
+//   let message;
+//   if (incompleteDoctors.length > 0) {
+//     message =
+//       'Some doctors records were incomplete and not added to the database. Please review the following records and ensure all required fields are provided';
+//   } else {
+//     message = 'All doctors records were successfully added to the database';
+//   }
+
+//   res.status(200).json({
+//     status: 'success',
+//     message,
+//     data: {
+//       incompleteDoctors,
+//       completeDoctors: storedDoctors,
+//     },
+//   });
+// });
+
 exports.uploadDoctorsData = catchAsync(async (req, res, next) => {
   if (!req.file) return next(new appError(400, 'file must be uploaded'));
 
@@ -121,6 +167,10 @@ exports.uploadDoctorsData = catchAsync(async (req, res, next) => {
 
   doctors.forEach((doctor, index) => {
     if (doctor.name && doctor.email) {
+      doctor.password = randomPassword(8, '1234567890');
+      doctor.doctorId = generateId(5);
+      // doctor.password = '12345678';
+      doctor.notActivated = true;
       completeDoctors.push(doctor);
     } else {
       doctor.doctorIndex = index + 1;
@@ -128,13 +178,9 @@ exports.uploadDoctorsData = catchAsync(async (req, res, next) => {
     }
   });
 
-  completeDoctors.forEach(doctor => {
-    doctor.password = randomPassword(8, '1234567890');
-    doctor.doctorId = generateId(5);
-    doctor.notActivated = true;
-  });
+  const storedDoctor = await Doctor.insertMany(completeDoctors);
 
-  const storedDoctors = await Doctor.insertMany(completeDoctors);
+  console.log(storedDoctor);
   // remove file from file system
   await fs.unlink(req.file.path);
   // handle message
@@ -151,7 +197,7 @@ exports.uploadDoctorsData = catchAsync(async (req, res, next) => {
     message,
     data: {
       incompleteDoctors,
-      completeDoctors: storedDoctors,
+      completeDoctors: storedDoctor,
     },
   });
 });
@@ -169,6 +215,9 @@ exports.enroll = catchAsync(async (req, res, next) => {
     return next(new appError(404, 'this course does not exist'));
   }
 
+  if (student.passedCourses.includes(courseCode)) {
+    return next(new appError('you have already enrolled in this course'));
+  }
   const prerequisitesMet = course.prerequisites.every(prerequisite =>
     student.passedCourses.includes(prerequisite)
   );
@@ -193,7 +242,7 @@ exports.enroll = catchAsync(async (req, res, next) => {
 exports.viewProfileForAdmin = catchAsync(async (req, res, next) => {
   // admin must be authenticated to use this function :
   const admin = await Admin.findById(req.user.id).select(
-    'name email role photo -_id'
+    'name email role profilePicture -_id'
   );
 
   res.status(200).json({
@@ -203,3 +252,51 @@ exports.viewProfileForAdmin = catchAsync(async (req, res, next) => {
     },
   });
 });
+
+// upload profile picture
+
+// exports.uploadProfilePicture = catchAsync(async (req, res, next) => {
+//   const adminId = req.user.id;
+
+//   // 1) upload image to cloudinary
+//   const { secure_url, public_id } = await cloudinary.uploader.upload(
+//     req.file.path
+//   );
+
+//   // 2) store image in the DB
+//   await Admin.findByIdAndUpdate(adminId, {
+//     profilePicture: { secure_url, public_id },
+//   });
+
+//   await promisify(fs.unlink)(req.file.path);
+
+//   res.status(200).json({
+//     status: 'success',
+//     message: 'image uploaded successfully',
+//     data: { image: secure_url },
+//   });
+// });
+
+// update profile picture :
+
+// exports.updateProfilePicture = catchAsync(async (req, res, next) => {
+//   const adminId = req.user.id;
+
+//   const admin = await Admin.findById(adminId);
+
+//   const { secure_url, public_id } = await cloudinary.uploader.upload(
+//     req.file.path
+//   );
+
+//   // remove old image from cloudinary
+//   await cloudinary.uploader.destroy(admin.profilePicture.public_id);
+//   await promisify(fs.unlink)(req.file.path);
+
+//   admin.profilePicture = { secure_url, public_id };
+//   await admin.save();
+//   res.status(200).json({
+//     status: 'success',
+//     message: 'profile picture updated successfully',
+//     data: { image: secure_url },
+//   });
+// });

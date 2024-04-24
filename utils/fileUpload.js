@@ -5,7 +5,6 @@ function fileUploads({ folder }) {
   const storage = multer.diskStorage({
     destination: `uploads/${folder}`,
     filename: (req, file, cb) => {
-      console.log(file);
       cb(null, file.originalname);
     },
   });

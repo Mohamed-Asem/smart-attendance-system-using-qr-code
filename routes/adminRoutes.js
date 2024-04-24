@@ -4,6 +4,7 @@ const adminAuth = require('./../controllers/admins/adminAuth');
 const auth = require('./../controllers/auth');
 const fileUpload = require('../utils/fileUpload');
 const router = express.Router();
+const cloudFileUploads = require('./../utils/multerCloud');
 
 router.post('/login', adminAuth.adminLogin);
 
@@ -84,5 +85,21 @@ router.get(
   auth.restrictTo('Admin'),
   adminController.viewProfileForAdmin
 );
+
+// router.post(
+//   '/uploadProfilePicture',
+//   auth.protect,
+//   auth.restrictTo('Admin'),
+//   cloudFileUploads().single('adminProfilePicture'),
+//   adminController.uploadProfilePicture
+// );
+
+// router.patch(
+//   '/updateProfilePicture',
+//   auth.protect,
+//   auth.restrictTo('Admin'),
+//   cloudFileUploads().single('adminProfilePicture'),
+//   adminController.updateProfilePicture
+// );
 
 module.exports = router;

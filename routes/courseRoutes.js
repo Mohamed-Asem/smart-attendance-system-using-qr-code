@@ -41,17 +41,37 @@ router.post(
   courseController.getCourseByCourseCode
 );
 
+router.post(
+  '/addCourseLectures/:courseId',
+  auth.protect,
+  auth.restrictTo('Admin'),
+  courseController.addCourseLectures
+);
+
+router.get(
+  '/getCourseLectures/:lectureId',
+  auth.protect,
+  auth.restrictTo('Admin', 'Doctor'),
+  courseController.findLectureById
+);
+router.delete(
+  '/deleteCourseLectures/:lectureId',
+  auth.protect,
+  auth.restrictTo('Admin'),
+  courseController.deleteLectureById
+);
+
+router.patch(
+  '/updateCourseLectures/:lectureId',
+  auth.protect,
+  auth.restrictTo('Admin'),
+  courseController.updateLectureById
+);
+
+router.post(
+  '/addSingleLecture/:courseId',
+  auth.protect,
+  auth.restrictTo('Admin'),
+  courseController.addSingleLecture
+);
 module.exports = router;
-
-/*
-
-1) add new course 
-
-2) get course by id 
-
-3) update course content 
-
-4) 
-
-
-*/

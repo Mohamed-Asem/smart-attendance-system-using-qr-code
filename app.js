@@ -7,7 +7,7 @@ const studentRoutes = require('./routes/studentRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const doctorRoutes = require('./routes/doctorRoutes');
 const courseRoutes = require('./routes/courseRoutes');
-const lectureRoutes = require('./routes/lectureRoutes');
+
 // starting express app
 const app = express();
 
@@ -34,7 +34,6 @@ app.use('/api/v1/students', studentRoutes);
 app.use('/api/v1/admins', adminRoutes);
 app.use('/api/v1/doctors', doctorRoutes);
 app.use('/api/v1/courses', courseRoutes);
-app.use('/api/v1/lectures', lectureRoutes);
 
 // handle unhandled routes :
 

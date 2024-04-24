@@ -46,59 +46,6 @@ exports.adminLogin = catchAsync(async (req, res, next) => {
   });
 });
 
-// // protect route check if the it is logged in
-// exports.protect = catchAsync(async (req, res, next) => {
-//   let token;
-//   if (
-//     req.headers.authorization &&
-//     req.headers.authorization.startsWith('Bearer')
-//   ) {
-//     token = req.headers.authorization.split(' ').at(1);
-//   }
-
-//   if (!token) {
-//     return next(new appError(401, 'pls login to get access to this resource'));
-//   }
-
-//   // check if the user logged out
-//   const blackListToken = await BlackListToken.findOne({ token });
-//   if (blackListToken)
-//     return next(
-//       new appError(401, 'You logged out .. please login again to get access')
-//     );
-//   // token verification
-//   const payload = await promisify(jwt.verify)(token, process.env.JWT_SECRETKEY);
-//   const admin = await Admin.findById(payload.id);
-//   if (!admin) return next(new appError(401, 'this admin is no longer exist'));
-//   //check if the doctor has changed his password after token has issued
-//   if (admin.checkIfTheAdminChangedPasswordAfterTokenIssued(payload.iat)) {
-//     return next(
-//       new appError(
-//         401,
-//         'Admin has recently changed his password .. pls login again'
-//       )
-//     );
-//   }
-//   req.user = admin;
-//   req.token = token;
-//   next();
-// });
-
-// // authorization :
-
-// exports.restrictTo = (...roles) => {
-//   return (req, res, next) => {
-//     if (!roles.includes(req.user.role)) {
-//       return next(
-//         new appError(403, 'you are not allowed to perform this action')
-//       );
-//     }
-//     next();
-//   };
-// };
-
-// 4 functions related to forget password functionalities
-
 // 1) forget password
 
 exports.forgetPassword = catchAsync(async (req, res, next) => {
@@ -234,13 +181,10 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   admin.passwordChangedAt = Date.now();
   await admin.save();
 
-  // log in the user
-  const token = createJWT(admin._id, admin.role);
-
   res.status(200).json({
     status: 'success',
-    message: 'Your password successfully updated',
-    token,
+    message:
+      'Your password successfully updated .. please login with your new password',
   });
 });
 
@@ -343,12 +287,12 @@ exports.changePassword = catchAsync(async (req, res, next) => {
   admin.passwordChangedAt = Date.now();
   await admin.save();
 
-  const token = createJWT(admin._id, admin.role);
+  // const token = createJWT(admin._id, admin.role);
 
   res.status(200).json({
     status: 'success',
-    message: 'Your password successfully updated',
-    token,
+    message:
+      'Your password successfully updated .. please login with your new password',
   });
 });
 

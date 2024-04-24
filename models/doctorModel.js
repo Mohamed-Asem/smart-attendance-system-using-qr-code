@@ -22,7 +22,7 @@ const doctorSchema = new mongoose.Schema(
       type: String,
       required: [true, 'doctor must have unique ID'],
     },
-    photo: String,
+    profilePicture: { secure_url: String, public_id: String },
     role: {
       type: String,
       default: 'Doctor',
@@ -45,28 +45,6 @@ const doctorSchema = new mongoose.Schema(
     toObject: { virtuals: true },
   }
 );
-
-// hashing password
-// doctorSchema.pre('save', async function (next) {
-//   if (!this.isModified('password')) {
-//     next();
-//   }
-
-//   this.password = await bcrypt.hash(this.password, 12);
-
-//   next();
-// });
-
-//check if the doctor has changed his password after token has issued
-doctorSchema.methods.checkIfDoctorChangedPasswordAfterTokenIssued = function (
-  jwttimestamps
-) {
-  if (this.passwordChangedAt) {
-    const time = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
-    return jwttimestamps < time;
-  }
-  return false;
-};
 
 // generate password reset code for students :
 doctorSchema.methods.generatePasswordResetCodeForDoctors = function () {

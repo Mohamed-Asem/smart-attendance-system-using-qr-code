@@ -39,7 +39,7 @@ const studentSchema = new mongoose.Schema({
   passedCourses: [
     {
       type: String,
-      ref: 'Course', // we cannot populate this fields we will only use them in course enrollment 
+      ref: 'Course', // we cannot populate this fields we will only use them in course enrollment
     },
   ],
   role: {
@@ -59,29 +59,6 @@ const studentSchema = new mongoose.Schema({
   passwordChangedAt: Date,
   notActivated: Boolean,
 });
-
-// hashing password
-
-// studentSchema.pre('save', async function (next) {
-//   if (!this.isModified('password')) {
-//     next();
-//   }
-
-//   this.password = await bcrypt.hash(this.password, 12);
-
-//   next();
-// });
-
-// check if the user has changed the password after the token issued
-studentSchema.methods.checkIfStudentChangedPasswordAfterTokenIssued = function (
-  jwttimestamps
-) {
-  if (this.passwordChangedAt) {
-    const time = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
-    return jwttimestamps < time;
-  }
-  return false;
-};
 
 // generate password reset code for students :
 studentSchema.methods.generatePasswordResetCodeForStudent = function () {

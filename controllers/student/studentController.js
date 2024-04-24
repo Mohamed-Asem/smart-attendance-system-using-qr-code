@@ -88,7 +88,12 @@ exports.getStudentByEmail = catchAsync(async (req, res, next) => {
 
 exports.updateStudent = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const student = await Student.findByIdAndUpdate(id, req.body, { new: true });
+  const { name, email, level, passedCourses } = req.body;
+  const student = await Student.findByIdAndUpdate(
+    id,
+    { name, email, level, passedCourses },
+    { new: true }
+  );
   if (!student) return next(new appError(404, 'this student does not exist'));
   res.status(200).json({
     status: 'success',

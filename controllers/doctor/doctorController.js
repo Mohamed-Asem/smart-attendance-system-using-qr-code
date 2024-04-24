@@ -1,3 +1,4 @@
+const fs = require('fs');
 const randomPassword = require('random-password');
 const Doctor = require('./../../models/doctorModel');
 const Student = require('./../../models/studentModel');
@@ -8,6 +9,8 @@ const generateQrCode = require('./../../utils/qrGenerator');
 const catchAsync = require('../../utils/catchAsync');
 const appError = require('../../utils/appError');
 const encryptData = require('./../../utils/encryptData');
+const cloudinary = require('./../../utils/cloud');
+const { promisify } = require('util');
 
 exports.addNewDoctor = catchAsync(async (req, res, next) => {
   const { name, email } = req.body;
@@ -65,7 +68,7 @@ exports.getDoctorByEmail = catchAsync(async (req, res, next) => {
   if (!email)
     return next(new appError(400, "Enter doctor's email to get his data"));
   const doctor = await Doctor.findOne({ email }).select('-passwordChangedAt');
-  if (!doctor) return next(404, 'this doctor does not exist');
+  if (!doctor) return next(new appError(404, 'this doctor does not exist'));
 
   res.status(200).json({
     status: 'success',
@@ -90,9 +93,19 @@ exports.deleteDoctor = catchAsync(async (req, res, next) => {
 
 exports.updateDoctor = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const updatedDoctor = await Doctor.findByIdAndUpdate(id, req.body, {
-    new: true,
-  });
+  const { name, email } = req.body;
+  if (!name || !email) {
+    return next(
+      new appError(400, "Enter doctor's name and email to be updated")
+    );
+  }
+  const updatedDoctor = await Doctor.findByIdAndUpdate(
+    id,
+    { name, email },
+    {
+      new: true,
+    }
+  );
 
   if (!updatedDoctor)
     return next(new appError(404, 'this doctor does not exist'));
@@ -107,14 +120,24 @@ exports.updateDoctor = catchAsync(async (req, res, next) => {
 
 exports.viewProfileForDoctors = catchAsync(async (req, res, next) => {
   // doctor must be authenticated to use this function :
-  const doctor = await Doctor.findById(req.user.id).select(
-    'name email role photo doctorId -_id'
-  );
+  const doctor = await Doctor.findById(req.user.id).populate({
+    path: 'courses',
+    select: 'courseName -doctorId',
+  });
+
+  const doctorData = {
+    name: doctor.name,
+    email: doctor.email,
+    doctorId: doctor.doctorId,
+    role: doctor.role,
+    courses: doctor.courses,
+    profilePicture: doctor.profilePicture.secure_url,
+  };
 
   res.status(200).json({
     status: 'success',
     data: {
-      doctor,
+      doctor: doctorData,
     },
   });
 });
@@ -127,6 +150,9 @@ exports.takeAttendance = catchAsync(async (req, res, next) => {
     '+attendanceRecorded'
   );
 
+  if (!currentLecture) {
+    return next(new appError(404, 'this lecture does not exist'));
+  }
   if (!currentLecture.attendanceRecorded) {
     // mark the lecture so we do not create attendance records for it again
     currentLecture.attendanceRecorded = true;
@@ -142,7 +168,8 @@ exports.takeAttendance = catchAsync(async (req, res, next) => {
         const attendance = new Attendance({
           studentId: student._id,
           studentName: student.name,
-          lecture: lectureId,
+          lectureId: lectureId,
+          lectureNumber: currentLecture.lectureNumber,
           courseId: courseId,
           token: `${courseId}${lectureId}${student._id}`,
           status: 'absent', // Set default status to 'absent'
@@ -167,5 +194,119 @@ exports.takeAttendance = catchAsync(async (req, res, next) => {
     data: {
       qrCode,
     },
+  });
+});
+
+exports.viewCourseAttendance = catchAsync(async (req, res, next) => {
+  const { courseId } = req.params;
+  const attendanceRecords = await Attendance.find({ courseId });
+  const attendanceData = {};
+  attendanceRecords.forEach(record => {
+    const { studentId, studentName, lectureNumber, status } = record;
+    if (!attendanceData[studentId]) {
+      attendanceData[studentId] = { studentName, attendances: [] };
+    }
+    attendanceData[studentId].attendances.push({ lectureNumber, status });
+  });
+
+  // Transform attendanceData into array format for frontend representation
+  const attendanceArray = Object.values(attendanceData).map(student => {
+    return {
+      studentName: student.studentName,
+      attendances: student.attendances,
+    };
+  });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      attendance: attendanceArray,
+    },
+  });
+});
+
+exports.viewLectureAttendance = catchAsync(async (req, res, next) => {
+  const { lectureId } = req.params;
+  const attendanceRecords = await Attendance.find({ lectureId }).select(
+    'studentName status'
+  );
+
+  res.status(200).json({
+    success: true,
+    data: {
+      attendanceRecords,
+    },
+  });
+});
+
+exports.changeStudentAttendanceStatus = catchAsync(async (req, res, next) => {
+  const { recordId } = req.params;
+  const record = await Attendance.findById(recordId).select(
+    'studentName status'
+  );
+  if (!record) return next(new appError(404, 'this record is not exist'));
+  if (record.status === 'absent') {
+    record.status = 'present';
+    await record.save();
+  } else {
+    record.status = 'absent';
+    await record.save();
+  }
+  res.status(201).json({
+    status: 'success',
+    message: `student marked as ${record.status} successfully`,
+    data: {
+      studentAttendance: record,
+    },
+  });
+});
+
+exports.uploadProfilePicture = catchAsync(async (req, res, next) => {
+  const doctorId = req.user.id;
+
+  // 1) upload image to cloudinary
+  const { secure_url, public_id } = await cloudinary.uploader.upload(
+    req.file.path
+  );
+
+  await Doctor.findByIdAndUpdate(doctorId, {
+    profilePicture: { secure_url, public_id },
+  });
+
+  await promisify(fs.unlink)(req.file.path);
+
+  res.status(200).json({
+    status: 'success',
+    message: 'image uploaded successfully',
+    data: { image: secure_url },
+  });
+});
+
+exports.updateProfilePicture = catchAsync(async (req, res, next) => {
+  const doctorId = req.user.id;
+
+  const doctor = await Doctor.findById(doctorId);
+  if (!doctor.profilePicture.public_id) {
+    return next(
+      new appError(
+        400,
+        'you have not profile picture yet please go and upload one'
+      )
+    );
+  }
+
+  const { secure_url, public_id } = await cloudinary.uploader.upload(
+    req.file.path
+  );
+
+  // remove old image from cloudinary
+  await cloudinary.uploader.destroy(doctor.profilePicture.public_id);
+
+  doctor.profilePicture = { secure_url, public_id };
+  await doctor.save();
+  res.status(200).json({
+    status: 'success',
+    message: 'profile picture updated successfully',
+    data: { image: secure_url },
   });
 });

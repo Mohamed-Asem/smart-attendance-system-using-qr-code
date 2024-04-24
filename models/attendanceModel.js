@@ -16,11 +16,12 @@ const attendanceSchema = new mongoose.Schema(
       ref: 'Course',
       required: true,
     },
-    lecture: {
+    lectureId: {
       type: mongoose.Schema.ObjectId,
       ref: 'Lecture',
       required: true,
     },
+    lectureNumber: { type: Number, required: true },
     status: {
       type: String,
       required: true,

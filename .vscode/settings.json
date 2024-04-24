@@ -1,3 +1,9 @@
 {
-  "cSpell.words": ["EXPIRESIN", "jwttimestamps", "SECRETKEY", "virtuals"]
+  "cSpell.words": [
+    "cloudinary",
+    "EXPIRESIN",
+    "jwttimestamps",
+    "SECRETKEY",
+    "virtuals"
+  ]
 }

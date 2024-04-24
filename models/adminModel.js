@@ -18,7 +18,7 @@ const adminSchema = new mongoose.Schema({
       message: 'Enter a valid email',
     },
   },
-  photo: String,
+  profilePicture: { secure_url: String, public_id: String },
   role: {
     type: String,
     default: 'Admin',
@@ -48,17 +48,6 @@ adminSchema.pre('save', async function (next) {
 
   next();
 });
-
-//check if user has changed password after token issued
-adminSchema.methods.checkIfTheAdminChangedPasswordAfterTokenIssued = function (
-  jwttimestamps
-) {
-  if (this.passwordChangedAt) {
-    const time = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
-    return jwttimestamps < time;
-  }
-  return false;
-};
 
 adminSchema.methods.generatePasswordResetCodeForAdmins = function () {
   this.passwordResetCode = Math.floor(1000 + Math.random() * 9000);

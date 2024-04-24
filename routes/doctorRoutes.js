@@ -1,8 +1,8 @@
 const express = require('express');
 const doctorController = require('./../controllers/doctor/doctorController');
 const doctorAuth = require('./../controllers/doctor/doctorAuth');
-const adminAuth = require('./../controllers/admins/adminAuth');
 const auth = require('./../controllers/auth');
+const cloudFileUploads = require('./../utils/multerCloud');
 
 const router = express.Router();
 
@@ -58,6 +58,44 @@ router.get(
   auth.restrictTo('Doctor'),
   doctorController.takeAttendance
 );
+
+router.get(
+  '/viewCourseAttendance/:courseId',
+  auth.protect,
+  auth.restrictTo('Doctor'),
+  doctorController.viewCourseAttendance
+);
+
+router.get(
+  '/viewLectureAttendance/:lectureId',
+  auth.protect,
+  auth.restrictTo('Doctor'),
+  doctorController.viewLectureAttendance
+);
+
+router.get(
+  '/changeStudentAttendance/:recordId',
+  auth.protect,
+  auth.restrictTo('Doctor'),
+  doctorController.changeStudentAttendanceStatus
+);
+
+router.post(
+  '/uploadProfilePicture',
+  auth.protect,
+  auth.restrictTo('Doctor'),
+  cloudFileUploads().single('profilePicture'),
+  doctorController.uploadProfilePicture
+);
+
+router.patch(
+  '/updateProfilePicture',
+  auth.protect,
+  auth.restrictTo('Doctor'),
+  cloudFileUploads().single('profilePicture'),
+  doctorController.updateProfilePicture
+);
+
 
 router
   .route('/')

@@ -14,6 +14,12 @@ const lectureSchema = new mongoose.Schema(
       type: Number,
       required: [true, 'Lecture must have a number'],
     },
+    uniqueLecture: {
+      type: String,
+      required: true,
+      unique: true,
+      select: false,
+    },
     attendanceRecorded: {
       type: Boolean,
       select: false,
