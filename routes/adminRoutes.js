@@ -86,20 +86,20 @@ router.get(
   adminController.viewProfileForAdmin
 );
 
-// router.post(
-//   '/uploadProfilePicture',
-//   auth.protect,
-//   auth.restrictTo('Admin'),
-//   cloudFileUploads().single('adminProfilePicture'),
-//   adminController.uploadProfilePicture
-// );
+router.post(
+  '/uploadProfilePicture',
+  auth.protect,
+  auth.restrictTo('Admin'),
+  cloudFileUploads().single('adminProfilePicture'),
+  adminController.uploadProfilePicture
+);
 
-// router.patch(
-//   '/updateProfilePicture',
-//   auth.protect,
-//   auth.restrictTo('Admin'),
-//   cloudFileUploads().single('adminProfilePicture'),
-//   adminController.updateProfilePicture
-// );
+router.patch(
+  '/updateProfilePicture',
+  auth.protect,
+  auth.restrictTo('Admin'),
+  cloudFileUploads().single('adminProfilePicture'),
+  adminController.updateProfilePicture
+);
 
 module.exports = router;

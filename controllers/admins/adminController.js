@@ -1,5 +1,4 @@
 const fs = require('fs').promises;
-const { promisify } = require('util');
 const randomPassword = require('random-password');
 const Admin = require('./../../models/adminModel');
 const Doctor = require('./../../models/doctorModel');
@@ -254,48 +253,67 @@ exports.viewProfileForAdmin = catchAsync(async (req, res, next) => {
 
 // upload profile picture
 
-// exports.uploadProfilePicture = catchAsync(async (req, res, next) => {
-//   const adminId = req.user.id;
+exports.uploadProfilePicture = catchAsync(async (req, res, next) => {
+  const adminId = req.user.id;
+  if (!req.file) {
+    return next(
+      new appError(400, 'file did not uploaded! .. please try again')
+    );
+  }
+  // 1) upload image to cloudinary
+  const { secure_url, public_id } = await cloudinary.uploader.upload(
+    req.file.path
+  );
 
-//   // 1) upload image to cloudinary
-//   const { secure_url, public_id } = await cloudinary.uploader.upload(
-//     req.file.path
-//   );
+  // 2) store image in the DB
+  await Admin.findByIdAndUpdate(adminId, {
+    profilePicture: { secure_url, public_id },
+  });
 
-//   // 2) store image in the DB
-//   await Admin.findByIdAndUpdate(adminId, {
-//     profilePicture: { secure_url, public_id },
-//   });
-
-//   await promisify(fs.unlink)(req.file.path);
-
-//   res.status(200).json({
-//     status: 'success',
-//     message: 'image uploaded successfully',
-//     data: { image: secure_url },
-//   });
-// });
+  await fs.unlink(req.file.path);
+  res.status(200).json({
+    status: 'success',
+    message: 'image uploaded successfully',
+    data: {
+      image: secure_url,
+    },
+  });
+});
 
 // update profile picture :
 
-// exports.updateProfilePicture = catchAsync(async (req, res, next) => {
-//   const adminId = req.user.id;
+exports.updateProfilePicture = catchAsync(async (req, res, next) => {
+  const adminId = req.user.id;
 
-//   const admin = await Admin.findById(adminId);
+  if (!req.file) {
+    return next(
+      new appError(400, 'file did not uploaded! .. please try again')
+    );
+  }
 
-//   const { secure_url, public_id } = await cloudinary.uploader.upload(
-//     req.file.path
-//   );
+  const admin = await Admin.findById(adminId);
 
-//   // remove old image from cloudinary
-//   await cloudinary.uploader.destroy(admin.profilePicture.public_id);
-//   await promisify(fs.unlink)(req.file.path);
+  if (!admin.profilePicture) {
+    return next(
+      new appError(
+        400,
+        'you have not uploaded profile picture yet please go and upload one'
+      )
+    );
+  }
+  const { secure_url, public_id } = await cloudinary.uploader.upload(
+    req.file.path
+  );
 
-//   admin.profilePicture = { secure_url, public_id };
-//   await admin.save();
-//   res.status(200).json({
-//     status: 'success',
-//     message: 'profile picture updated successfully',
-//     data: { image: secure_url },
-//   });
-// });
+  // remove old image from cloudinary
+  await cloudinary.uploader.destroy(admin.profilePicture.public_id);
+  await fs.unlink(req.file.path);
+
+  admin.profilePicture = { secure_url, public_id };
+  await admin.save();
+  res.status(200).json({
+    status: 'success',
+    message: 'profile picture updated successfully',
+    data: { image: secure_url },
+  });
+});

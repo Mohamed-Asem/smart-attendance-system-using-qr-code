@@ -3,6 +3,7 @@
     "cloudinary",
     "EXPIRESIN",
     "jwttimestamps",
+    "qrcode",
     "SECRETKEY",
     "virtuals"
   ]

@@ -166,14 +166,16 @@ exports.takeAttendance = catchAsync(async (req, res, next) => {
     await currentLecture.save({ validateBeforeSave: false });
 
     const students = await Student.find({ courses: courseId }).select(
-      '_id name'
+      '_id name studentId'
     );
+
     // create attendance records
     await Promise.all(
       students.map(async student => {
         // Create attendance record
         const attendance = new Attendance({
           studentId: student._id,
+          studentCode: student.studentId,
           studentName: student.name,
           lectureId: lectureId,
           lectureNumber: currentLecture.lectureNumber,
@@ -271,7 +273,7 @@ exports.changeStudentAttendanceStatus = catchAsync(async (req, res, next) => {
 exports.uploadProfilePicture = catchAsync(async (req, res, next) => {
   const doctorId = req.user.id;
 
-  if (!req.file.path) {
+  if (!req.file) {
     return next(
       new appError(400, 'file did not uploaded! .. please try again')
     );
@@ -297,18 +299,19 @@ exports.uploadProfilePicture = catchAsync(async (req, res, next) => {
 exports.updateProfilePicture = catchAsync(async (req, res, next) => {
   const doctorId = req.user.id;
 
-  if (!req.file.path) {
+  if (!req.file) {
     return next(
       new appError(400, 'file did not uploaded! .. please try again')
     );
   }
 
   const doctor = await Doctor.findById(doctorId);
-  if (!doctor.profilePicture.public_id) {
+
+  if (!doctor.profilePicture) {
     return next(
       new appError(
         400,
-        'you have not profile picture yet please go and upload one'
+        'you have not uploaded profile picture yet please go and upload one'
       )
     );
   }

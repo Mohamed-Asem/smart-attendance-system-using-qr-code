@@ -147,13 +147,16 @@ exports.addCourseLectures = catchAsync(async (req, res, next) => {
 
   for (const lecture of lectures) {
     lecture.courseId = courseId;
-    let ln;
-    if (`${lecture.lectureNumber}`.length === 1) {
-      ln = `${lecture.lectureNumber}0`;
-    } else {
-      ln = `${lecture.lectureNumber}`;
+    lecture.uniqueLecture = `${courseId}${lecture.lectureNumber}`;
+    const existedLecture = await Lecture.findOne({
+      uniqueLecture: lecture.uniqueLecture,
+    });
+
+    if (existedLecture) {
+      return next(
+        new appError(400, 'this lecture has been stored for this course before')
+      );
     }
-    lecture.uniqueLecture = `${courseId}${ln}`;
     const storedLecture = await Lecture.create(lecture);
     storedLectures.push(storedLecture); // Collect stored lectures
   }
@@ -218,10 +221,7 @@ exports.updateLectureById = catchAsync(async (req, res, next) => {
   lecture.title = title || lecture.title;
   lecture.lectureNumber = lectureNumber || lecture.lectureNumber;
 
-  let ln =
-    `${lectureNumber}`.length === 1 ? `${lectureNumber}0` : `${lectureNumber}`;
-
-  lecture.uniqueLecture = `${lecture.courseId}${ln}`;
+  lecture.uniqueLecture = `${lecture.courseId}${lecture.lectureNumber}`;
 
   await lecture.save();
 
