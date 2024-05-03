@@ -237,7 +237,7 @@ exports.viewCourseAttendance = catchAsync(async (req, res, next) => {
 exports.viewLectureAttendance = catchAsync(async (req, res, next) => {
   const { lectureId } = req.params;
   const attendanceRecords = await Attendance.find({ lectureId }).select(
-    'studentName status'
+    'studentName status studentCode'
   );
 
   res.status(200).json({
