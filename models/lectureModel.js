@@ -26,6 +26,10 @@ const lectureSchema = new mongoose.Schema(
       type: Boolean,
       select: false,
     },
+    lockedAttendance: {
+      type: Boolean,
+      select: false,
+    },
   },
   {
     toJSON: { virtuals: true },

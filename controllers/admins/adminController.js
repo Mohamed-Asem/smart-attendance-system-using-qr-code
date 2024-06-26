@@ -214,8 +214,15 @@ exports.enroll = catchAsync(async (req, res, next) => {
   }
 
   if (student.passedCourses.includes(courseCode)) {
-    return next(new appError('you have already enrolled in this course'));
+    return next(new appError('you have already passed this course before!'));
   }
+
+  if (student.courses.includes(course._id)) {
+    return next(
+      new appError(400, 'You have already enrolled in this course before')
+    );
+  }
+
   const prerequisitesMet = course.prerequisites.every(prerequisite =>
     student.passedCourses.includes(prerequisite)
   );

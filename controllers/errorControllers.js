@@ -9,7 +9,7 @@ const sendErrorInDevelopment = (err, res) => {
   });
 };
 
-const sendErrorInproduction = (err, res) => {
+const sendErrorInProduction = (err, res) => {
   if (err.isOperational) {
     res.status(err.statusCode).json({
       status: err.status,
@@ -25,7 +25,7 @@ const sendErrorInproduction = (err, res) => {
   }
 };
 
-const globalErrorHander = (err, req, res, next) => {
+const globalErrorHandler = (err, req, res, next) => {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
 
@@ -37,11 +37,11 @@ const globalErrorHander = (err, req, res, next) => {
       err = new appError(400, `Invalid ${err.path} : ${err.value}`);
     }
 
-    // handling dublicate fields value :
+    // handling duplicate fields value :
     if (err.code === 11000) {
       err = new appError(
         400,
-        `Dublicate field ${Object.keys(err.keyValue)[0]} with the value ${
+        `Duplicate field ${Object.keys(err.keyValue)[0]} with the value ${
           err.keyValue[Object.keys(err.keyValue)[0]]
         }`
       );
@@ -57,14 +57,14 @@ const globalErrorHander = (err, req, res, next) => {
 
     // handling TokenExpiredError
     if (err.name === 'TokenExpiredError') {
-      err = new appError(401, 'Token has been exbired .. pls login again');
+      err = new appError(401, 'Token has been expired .. pls login again');
     }
 
     if (err.name === 'JsonWebTokenError') {
       err = new appError(401, 'Invalid token pls login again!');
     }
-    sendErrorInproduction(err, res);
+    sendErrorInProduction(err, res);
   }
 };
 
-module.exports = globalErrorHander;
+module.exports = globalErrorHandler;

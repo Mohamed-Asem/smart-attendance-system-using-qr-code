@@ -2,6 +2,7 @@ const appError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const Course = require('../models/courseModel');
 const Lecture = require('./../models/lectureModel');
+const Doctor = require('./../models/doctorModel');
 
 exports.addNewCourse = catchAsync(async (req, res, next) => {
   const { courseName, courseCode, doctorId, prerequisites } = req.body;
@@ -14,6 +15,11 @@ exports.addNewCourse = catchAsync(async (req, res, next) => {
     );
   }
 
+  // adding doctor name to the response :
+  const { name: doctorName } = await Doctor.findById(doctorId).select(
+    'name -_id'
+  );
+
   const course = await Course.create({
     courseName,
     courseCode,
@@ -25,6 +31,7 @@ exports.addNewCourse = catchAsync(async (req, res, next) => {
     status: 'success',
     data: {
       course,
+      doctorName,
     },
   });
 });
@@ -86,6 +93,7 @@ exports.deleteCourseByCourseCode = catchAsync(async (req, res, next) => {
 exports.deleteCourseById = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const course = await Course.findByIdAndDelete(id);
+  await Lecture.deleteMany({ courseId: id });
   if (!course) return next(new appError(404, 'this course does not exist'));
   res.status(204).json({
     status: 'success',
@@ -133,7 +141,7 @@ exports.getDoctorCourses = catchAsync(async (req, res, next) => {
   });
 });
 
-// add lectures of specific course:
+// These controllers related to Lecture resource 
 
 exports.addCourseLectures = catchAsync(async (req, res, next) => {
   const { courseId } = req.params;
@@ -242,6 +250,15 @@ exports.addSingleLecture = catchAsync(async (req, res, next) => {
   if (existedLecture) {
     return next(
       new appError(400, 'this lecture has been added for this course before')
+    );
+  }
+
+  // make sure the sure does not has more than 21 lectures :
+  const courseLectures = await Lecture.find({ courseId });
+
+  if (courseLectures.length === 12) {
+    return next(
+      new appError(400, 'The course should contain only 12 lectures')
     );
   }
 

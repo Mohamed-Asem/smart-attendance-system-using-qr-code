@@ -154,15 +154,21 @@ exports.takeAttendance = catchAsync(async (req, res, next) => {
 
   // ensure that we did not create attendance records for this lecture before
   const currentLecture = await Lecture.findById(lectureId).select(
-    '+attendanceRecorded'
+    '+attendanceRecorded +lockedAttendance'
   );
 
   if (!currentLecture) {
     return next(new appError(404, 'this lecture does not exist'));
   }
+
+  // allow students to recording their attendance for this lecture :
+  currentLecture.lockedAttendance = false;
+  await currentLecture.save({ validateBeforeSave: false });
+
   if (!currentLecture.attendanceRecorded) {
     // mark the lecture so we do not create attendance records for it again
     currentLecture.attendanceRecorded = true;
+    currentLecture.lockedAttendance = false;
     await currentLecture.save({ validateBeforeSave: false });
 
     const students = await Student.find({ courses: courseId }).select(
@@ -203,6 +209,19 @@ exports.takeAttendance = catchAsync(async (req, res, next) => {
     data: {
       qrCode,
     },
+  });
+});
+
+// endpoint to prevent students to record their attendance after closing qr code by the doctor
+
+exports.closeQr = catchAsync(async (req, res, next) => {
+  const { lectureId } = req.params;
+  await Lecture.findByIdAndUpdate(lectureId, { lockedAttendance: true });
+
+  res.status(200).json({
+    status: 'success',
+    message:
+      'Registration for student attendance for this lecture has been closed successfully',
   });
 });
 

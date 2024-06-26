@@ -1,6 +1,7 @@
 const randomPassword = require('random-password');
 const Student = require('../../models/studentModel');
 const Attendance = require('./../../models/attendanceModel');
+const Lecture = require('./../../models/lectureModel');
 const catchAsync = require('../../utils/catchAsync');
 const appError = require('../../utils/appError');
 const generateUniqueId = require('./../../utils/generateUniqueId');
@@ -97,6 +98,7 @@ exports.updateStudent = catchAsync(async (req, res, next) => {
       )
     );
   }
+
   const student = await Student.findByIdAndUpdate(
     id,
     { name, email, level, passedCourses },
@@ -147,6 +149,21 @@ exports.scan = catchAsync(async (req, res, next) => {
   }
 
   const qrData = decryptData(qrCode, process.env.QR_SECRETKEY);
+
+  // make sure that lecture qr is still opened
+
+  const lecture = await Lecture.findById(qrData.split(',').at(1)).select(
+    '+lockedAttendance'
+  );
+
+  if (lecture.lockedAttendance) {
+    return next(
+      new appError(
+        400,
+        'You are not allowed to record this attendance for this lecture'
+      )
+    );
+  }
 
   const token = `${qrData.split(',').join('')}${studentId}`;
 

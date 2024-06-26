@@ -59,6 +59,13 @@ router.get(
   doctorController.takeAttendance
 );
 
+router.patch(
+  '/closeQr/:lectureId',
+  auth.protect,
+  auth.restrictTo('Doctor'),
+  doctorController.closeQr
+);
+
 router.get(
   '/viewCourseAttendance/:courseId',
   auth.protect,
@@ -95,7 +102,6 @@ router.patch(
   cloudFileUploads().single('profilePicture'),
   doctorController.updateProfilePicture
 );
-
 
 router
   .route('/')
