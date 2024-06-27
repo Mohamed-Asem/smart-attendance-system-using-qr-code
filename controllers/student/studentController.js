@@ -2,6 +2,7 @@ const randomPassword = require('random-password');
 const Student = require('../../models/studentModel');
 const Attendance = require('./../../models/attendanceModel');
 const Lecture = require('./../../models/lectureModel');
+const Course = require('./../../models/courseModel');
 const catchAsync = require('../../utils/catchAsync');
 const appError = require('../../utils/appError');
 const generateUniqueId = require('./../../utils/generateUniqueId');
@@ -9,8 +10,13 @@ const decryptData = require('./../../utils/decryptData');
 
 exports.addNewStudent = catchAsync(async (req, res, next) => {
   const { name, email, level, passedCourses, courses } = req.body;
-  if (!name || !email || !level) {
-    return next(new appError(400, "Enter student's name, email and level"));
+  if (!name || !email || !level || !passedCourses || !courses) {
+    return next(
+      new appError(
+        400,
+        "Enter student's name, email, level, passedCourses and courses"
+      )
+    );
   }
 
   const password = randomPassword(8, '1234567890');
@@ -27,10 +33,23 @@ exports.addNewStudent = catchAsync(async (req, res, next) => {
     courses,
   });
 
+  let courseNamesArray = [];
+
+  if (courses.length > 0) {
+    const courseNames = await Course.find({ _id: { $in: courses } }).select(
+      'courseName'
+    );
+
+    courseNamesArray = courseNames.map(course => course.courseName);
+  }
+
   res.status(201).json({
     status: 'success',
     data: {
-      student,
+      student: {
+        ...student.toObject(),
+        courses: courseNamesArray,
+      },
     },
   });
 });
