@@ -168,7 +168,6 @@ exports.takeAttendance = catchAsync(async (req, res, next) => {
   if (!currentLecture.attendanceRecorded) {
     // mark the lecture so we do not create attendance records for it again
     currentLecture.attendanceRecorded = true;
-    currentLecture.lockedAttendance = false;
     await currentLecture.save({ validateBeforeSave: false });
 
     const students = await Student.find({ courses: courseId }).select(

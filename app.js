@@ -1,5 +1,6 @@
 const express = require('express');
 const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
 const compression = require('compression');
 const appError = require('./utils/appError');
 const errorController = require('./controllers/errorControllers');
@@ -26,6 +27,7 @@ app.use(helmet());
 
 // body parser
 app.use(express.json());
+app.use(mongoSanitize());
 
 app.use(compression());
 
